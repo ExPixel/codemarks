@@ -338,6 +338,11 @@ export class MarkHandler implements vscode.Disposable {
             this.globalMarks.splice(foundIndex, 1);
         }
 
+        const foundInClosedIndex = this.closedGlobalMarks.findIndex((m) => m.name === markName);
+        if (foundInClosedIndex >= 0) {
+            this.closedGlobalMarks.splice(foundInClosedIndex, 1);
+        }
+
         if (!isClear) {
             const globalMark: IGlobalMark = {
                 document: editor.document,
@@ -449,27 +454,40 @@ export class MarkHandler implements vscode.Disposable {
         }
     }
 
-    public getMarksList(): IAnyMark[] {
+    public getMarksList(relativeTo?: vscode.TextDocument): IAnyMark[] {
         const list: IAnyMark[] = [];
 
-        for (const [document, marks] of this.localMarks.entries()) {
-            for (const mark of marks) {
-                list.push({
-                    name: mark.name,
-                    filename: document.fileName,
-                    line: mark.line,
-                    column: mark.column,
-                    isGlobal: false,
-                    document: document,
+        let rootPath: string | undefined;
+        if (relativeTo) {
+            const wf = vscode.workspace.getWorkspaceFolder(relativeTo.uri);
+            if (wf) {
+                rootPath = wf.uri.fsPath;
+            }
+        }
 
-                    label: mark.name,
-                    description: `${document.fileName}:${mark.line}:${mark.column}`,
-                    detail: "Local",
-                });
+        if (relativeTo) {
+            for (const [document, marks] of this.localMarks.entries()) {
+                if (document !== relativeTo) { continue; }
+                for (const mark of marks) {
+                    const relativeFilename = rootPath ? Path.relative(rootPath, document.fileName) : document.fileName;
+                    list.push({
+                        name: mark.name,
+                        filename: document.fileName,
+                        line: mark.line,
+                        column: mark.column,
+                        isGlobal: false,
+                        document: document,
+
+                        label: mark.name,
+                        description: `${relativeFilename}:${mark.line + 1}:${mark.column + 1}`,
+                        detail: "Local",
+                    });
+                }
             }
         }
 
         for (const mark of this.globalMarks) {
+            const relativeFilename = rootPath ? Path.relative(rootPath, mark.document.fileName) : mark.document.fileName;
             list.push({
                 name: mark.name,
                 filename: mark.document.fileName,
@@ -479,12 +497,13 @@ export class MarkHandler implements vscode.Disposable {
                 document: mark.document,
 
                 label: mark.name,
-                description: `${mark.document.fileName}:${mark.line}:${mark.column}`,
+                description: `${relativeFilename}:${mark.line + 1}:${mark.column + 1}`,
                 detail: "Global",
             });
         }
 
         for (const mark of this.closedGlobalMarks) {
+            const relativeFilename = rootPath ? Path.relative(rootPath, mark.filename) : mark.filename;
             list.push({
                 name: mark.name,
                 filename: mark.filename,
@@ -493,7 +512,7 @@ export class MarkHandler implements vscode.Disposable {
                 isGlobal: true,
 
                 label: mark.name,
-                description: `${mark.filename}:${mark.line}:${mark.column}`,
+                description: `${relativeFilename}:${mark.line + 1}:${mark.column + 1}`,
                 detail: "Global (closed)",
             });
         }
@@ -506,16 +525,13 @@ export class MarkHandler implements vscode.Disposable {
     }
 }
 
+let markHandler: MarkHandler | null = null;
 export function getMarkHandler(context: vscode.ExtensionContext): MarkHandler {
-    const handler = context.workspaceState.get<MarkHandler>("codemarks.handler");
-    if (!handler) {
-        const newHandler = new MarkHandler();
-        context.workspaceState.update("codemarks.handler", newHandler);
-        context.subscriptions.push(newHandler);
-        return newHandler;
-    } else {
-        return handler;
+    if (markHandler == null) {
+        markHandler = new MarkHandler();
+        context.subscriptions.push(markHandler);
     }
+    return markHandler;
 }
 
 function internalCreateMark(mark: string, context: vscode.ExtensionContext) {
@@ -590,7 +606,7 @@ export function jumpToMark(context: vscode.ExtensionContext) {
 
 export async function listMarks(context: vscode.ExtensionContext) {
     const handler = getMarkHandler(context);
-    const marks = handler.getMarksList();
+    const marks = handler.getMarksList(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
 
     const picked = await vscode.window.showQuickPick(marks, {
         matchOnDetail: true,
@@ -603,10 +619,10 @@ export async function listMarks(context: vscode.ExtensionContext) {
 
 export async function listMarksDelete(context: vscode.ExtensionContext) {
     const handler = getMarkHandler(context);
-    const marks = handler.getMarksList();
+    const marks = handler.getMarksList(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
 
     const picked = await vscode.window.showQuickPick(marks, {
-        matchOnDetail: true,
+        matchOnDescription: true,
     });
 
     if (picked) {
