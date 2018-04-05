@@ -506,23 +506,20 @@ export class MarkHandler implements vscode.Disposable {
     }
 }
 
-let markHandler: MarkHandler | null = null;
-export function getMarkHandler(): MarkHandler {
-    if (markHandler === null) {
-        markHandler = new MarkHandler();
-    }
-    return markHandler;
-}
-
-export function disposeMarkHandler() {
-    if (markHandler !== null) {
-        markHandler.dispose();
-        markHandler = null;
+export function getMarkHandler(context: vscode.ExtensionContext): MarkHandler {
+    const handler = context.workspaceState.get<MarkHandler>("codemarks.handler");
+    if (!handler) {
+        const newHandler = new MarkHandler();
+        context.workspaceState.update("codemarks.handler", newHandler);
+        context.subscriptions.push(newHandler);
+        return newHandler;
+    } else {
+        return handler;
     }
 }
 
-function internalCreateMark(mark: string) {
-    const handler = getMarkHandler();
+function internalCreateMark(mark: string, context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
     if (isLowercaseLetter(mark)) {
         if (vscode.window.activeTextEditor) {
             handler.createEditorMark(mark, vscode.window.activeTextEditor);
@@ -534,8 +531,8 @@ function internalCreateMark(mark: string) {
     }
 }
 
-function internalJumpToMark(mark: string) {
-    const handler = getMarkHandler();
+function internalJumpToMark(mark: string, context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
     if (isLowercaseLetter(mark)) {
         if (vscode.window.activeTextEditor) {
             handler.jumpToLocalMark(mark, vscode.window.activeTextEditor);
@@ -562,7 +559,7 @@ function isUppercaseLetter(ch: string): boolean {
 export function createMark(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
         if (args && typeof args.text === "string" && args.text.length >= 1) {
-            internalCreateMark(args.text[0]);
+            internalCreateMark(args.text[0], context);
         }
 
         disposable.dispose();
@@ -578,7 +575,7 @@ export function createMark(context: vscode.ExtensionContext) {
 export function jumpToMark(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
         if (args && typeof args.text === "string" && args.text.length >= 1) {
-            internalJumpToMark(args.text[0]);
+            internalJumpToMark(args.text[0], context);
         }
 
         disposable.dispose();
@@ -592,7 +589,7 @@ export function jumpToMark(context: vscode.ExtensionContext) {
 }
 
 export async function listMarks(context: vscode.ExtensionContext) {
-    const handler = getMarkHandler();
+    const handler = getMarkHandler(context);
     const marks = handler.getMarksList();
 
     const picked = await vscode.window.showQuickPick(marks, {
@@ -605,7 +602,7 @@ export async function listMarks(context: vscode.ExtensionContext) {
 }
 
 export async function listMarksDelete(context: vscode.ExtensionContext) {
-    const handler = getMarkHandler();
+    const handler = getMarkHandler(context);
     const marks = handler.getMarksList();
 
     const picked = await vscode.window.showQuickPick(marks, {
@@ -618,6 +615,6 @@ export async function listMarksDelete(context: vscode.ExtensionContext) {
 }
 
 export async function clearAllMarks(context: vscode.ExtensionContext) {
-    const handler = getMarkHandler();
+    const handler = getMarkHandler(context);
     handler.clearAllMarks();
 }
