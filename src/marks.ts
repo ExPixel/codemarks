@@ -338,6 +338,11 @@ export class MarkHandler implements vscode.Disposable {
             this.globalMarks.splice(foundIndex, 1);
         }
 
+        const foundInClosedIndex = this.closedGlobalMarks.findIndex((m) => m.name === markName);
+        if (foundInClosedIndex >= 0) {
+            this.closedGlobalMarks.splice(foundInClosedIndex, 1);
+        }
+
         if (!isClear) {
             const globalMark: IGlobalMark = {
                 document: editor.document,
