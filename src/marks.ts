@@ -463,7 +463,7 @@ export class MarkHandler implements vscode.Disposable {
                     document: document,
 
                     label: mark.name,
-                    description: `${document.fileName}:${mark.line}:${mark.column}`,
+                    description: `${document.fileName + 1}:${mark.line}:${mark.column + 1}`,
                     detail: "Local",
                 });
             }
@@ -479,7 +479,7 @@ export class MarkHandler implements vscode.Disposable {
                 document: mark.document,
 
                 label: mark.name,
-                description: `${mark.document.fileName}:${mark.line}:${mark.column}`,
+                description: `${mark.document.fileName}:${mark.line + 1}:${mark.column + 1}`,
                 detail: "Global",
             });
         }
@@ -493,7 +493,7 @@ export class MarkHandler implements vscode.Disposable {
                 isGlobal: true,
 
                 label: mark.name,
-                description: `${mark.filename}:${mark.line}:${mark.column}`,
+                description: `${mark.filename}:${mark.line + 1}:${mark.column + 1}`,
                 detail: "Global (closed)",
             });
         }
