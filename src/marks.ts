@@ -156,8 +156,6 @@ export class MarkHandler implements vscode.Disposable {
 
         this.textEditorOpenedListener = vscode.workspace.onDidOpenTextDocument((e) => {
             const docFilename = Path.resolve(e.fileName);
-
-            // #FIXME normalize the filenames before comparing them.
             const foundIndex = this.closedGlobalMarks.findIndex((c) => c.filename === docFilename);
             if (foundIndex >= 0) {
                 const savedMark = this.closedGlobalMarks[foundIndex];
