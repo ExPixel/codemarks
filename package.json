@@ -12,7 +12,8 @@
     ],
     "activationEvents": [
         "onCommand:codemarks.createMark",
-        "onCommand:codemarks.jumpToMark"
+        "onCommand:codemarks.jumpToMark",
+        "onCommand:codemarks.listMarks"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -43,6 +44,21 @@
             {
                 "command": "codemarks.jumpToMark",
                 "title": "Jump To Mark"
+            },
+
+            {
+                "command": "codemarks.listMarks",
+                "title": "List Marks"
+            },
+
+            {
+                "command": "codemarks.listMarksDelete",
+                "title": "Delete Mark From List"
+            },
+
+            {
+                "command": "codemarks.clearAllMarks",
+                "title": "Clear all Marks"
             }
         ],
 
