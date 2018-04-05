@@ -617,7 +617,7 @@ export async function listMarksDelete(context: vscode.ExtensionContext) {
     const marks = handler.getMarksList(vscode.window.activeTextEditor && vscode.window.activeTextEditor.document);
 
     const picked = await vscode.window.showQuickPick(marks, {
-        matchOnDetail: true,
+        matchOnDescription: true,
     });
 
     if (picked) {
