@@ -1,0 +1,79 @@
+{
+    "name": "code-marks",
+    "displayName": "Code Marks",
+    "description": "Quickly mark locations in your code.",
+    "version": "0.0.1",
+    "publisher": "ExPixel",
+    "engines": {
+        "vscode": "^1.21.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onCommand:codemarks.createMark",
+        "onCommand:codemarks.jumpToMark"
+    ],
+    "main": "./out/extension",
+    "contributes": {
+        "configuration": {
+            "type": "Object",
+            "title": "Code Marks Configuration",
+            "properties": {
+                "codemarks.localMarkColor": {
+                    "type": "string",
+                    "default": "#37b24d",
+                    "description": "Color used for the border of a local mark."
+                },
+
+                "codemarks.globalMarkColor": {
+                    "type": "string",
+                    "default": "#f59f00",
+                    "description": "Color used for the border of a global mark."
+                }
+            }
+        },
+
+        "commands": [
+            {
+            "command": "codemarks.createMark",
+            "title": "Create Mark"
+            },
+
+            {
+                "command": "codemarks.jumpToMark",
+                "title": "Jump To Mark"
+            }
+        ],
+
+        "keybindings": [
+            {
+                "command": "codemarks.createMark",
+                "key": "ctrl+;",
+                "mac": "cmd+;",
+                "when": "editorTextFocus"
+            },
+
+            {
+                "command": "codemarks.jumpToMark",
+                "key": "ctrl+'",
+                "mac": "cmd+'",
+                "when": "editorFocus"
+            }
+        ]
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run compile",
+        "compile": "tsc -p ./",
+        "watch": "tsc -watch -p ./",
+        "postinstall": "node ./node_modules/vscode/bin/install",
+        "test": "npm run compile && node ./node_modules/vscode/bin/test"
+    },
+    "devDependencies": {
+        "typescript": "^2.6.1",
+        "vscode": "^1.1.6",
+        "tslint": "^5.8.0",
+        "@types/node": "^7.0.43",
+        "@types/mocha": "^2.2.42"
+    }
+}
