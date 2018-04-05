@@ -30,6 +30,19 @@ export interface ISavedGlobalMark {
     column: number;
 }
 
+export interface IAnyMark {
+    name: string;
+    filename: string;
+    line: number;
+    column: number;
+    isGlobal: boolean;
+    document?: vscode.TextDocument;
+
+    label: string;
+    description: string;
+    detail: string;
+}
+
 /**
  * returns true if the mark was changed.
  */
@@ -104,7 +117,7 @@ export class MarkHandler implements vscode.Disposable {
     private init() {
         this.textEditorCloseListener = vscode.workspace.onDidCloseTextDocument((e) => {
             this.localMarks.delete(e); // remove the local marks and local document references
-            this.globalMarks.filter((mark) => {
+            this.globalMarks = this.globalMarks.filter((mark) => {
                 if (mark.document === e) {
                     if (!e.isUntitled) {
                         const closedMark: ISavedGlobalMark = {
@@ -156,8 +169,6 @@ export class MarkHandler implements vscode.Disposable {
 
         this.textEditorOpenedListener = vscode.workspace.onDidOpenTextDocument((e) => {
             const docFilename = Path.resolve(e.fileName);
-
-            // #FIXME normalize the filenames before comparing them.
             const foundIndex = this.closedGlobalMarks.findIndex((c) => c.filename === docFilename);
             if (foundIndex >= 0) {
                 const savedMark = this.closedGlobalMarks[foundIndex];
@@ -289,22 +300,28 @@ export class MarkHandler implements vscode.Disposable {
     public createEditorMark(markName: string, editor: vscode.TextEditor) {
         const document = editor.document;
         let marks = this.localMarks.get(document);
+        let isClear = false;
         if (!marks) {
             marks = [];
             this.localMarks.set(document, marks);
         } else {
             const foundIndex = marks.findIndex((m) => m.name === markName);
             if (foundIndex >= 0) {
+                const removing = marks[foundIndex];
+                isClear = removing.line === editor.selection.active.line &&
+                    removing.column === editor.selection.active.character;
                 marks.splice(foundIndex, 1);
             }
         }
 
-        const localMark: ILocalMark = {
-            name: markName,
-            line: editor.selection.active.line,
-            column: editor.selection.active.character,
-        };
-        marks.push(localMark);
+        if (!isClear) {
+            const localMark: ILocalMark = {
+                name: markName,
+                line: editor.selection.active.line,
+                column: editor.selection.active.character,
+            };
+            marks.push(localMark);
+        }
 
         if (editor === vscode.window.activeTextEditor) {
             this.updateDecorations(editor);
@@ -313,17 +330,23 @@ export class MarkHandler implements vscode.Disposable {
 
     public createGlobalMark(markName: string, editor: vscode.TextEditor) {
         const foundIndex = this.globalMarks.findIndex((m) => m.name === markName);
-        if (foundIndex >= -1) {
+        let isClear = false;
+        if (foundIndex >= 0) {
+            const removing = this.globalMarks[foundIndex];
+            isClear = removing.line === editor.selection.active.line &&
+                removing.column === editor.selection.active.character;
             this.globalMarks.splice(foundIndex, 1);
         }
 
-        const globalMark: IGlobalMark = {
-            document: editor.document,
-            name: markName,
-            line: editor.selection.active.line,
-            column: editor.selection.active.character,
-        };
-        this.globalMarks.push(globalMark);
+        if (!isClear) {
+            const globalMark: IGlobalMark = {
+                document: editor.document,
+                name: markName,
+                line: editor.selection.active.line,
+                column: editor.selection.active.character,
+            };
+            this.globalMarks.push(globalMark);
+        }
 
         if (editor === vscode.window.activeTextEditor) {
             this.updateDecorations(editor);
@@ -389,25 +412,114 @@ export class MarkHandler implements vscode.Disposable {
             vscode.window.activeTextEditor.selection = selection;
         }
     }
-}
 
-let markHandler: MarkHandler | null = null;
-export function getMarkHandler(): MarkHandler {
-    if (markHandler === null) {
-        markHandler = new MarkHandler();
+    public async jumpToAnyMark(anyMark: IAnyMark) {
+        if (anyMark.isGlobal) {
+            this.jumpToGlobalMark(anyMark.name);
+        } else if (anyMark.document && !anyMark.document.isClosed) {
+            this.jumpToMark(anyMark, anyMark.document);
+        }
     }
-    return markHandler;
-}
 
-export function disposeMarkHandler() {
-    if (markHandler !== null) {
-        markHandler.dispose();
-        markHandler = null;
+    public deleteAnyMark(anyMark: IAnyMark) {
+        if (anyMark.isGlobal) {
+            const gindex = this.globalMarks.findIndex((m) => m.name === anyMark.name);
+            const cindex = this.closedGlobalMarks.findIndex((m) => m.name === anyMark.name);
+
+            if (gindex >= 0) { this.globalMarks.splice(gindex, 1); }
+            if (cindex >= 0) { this.closedGlobalMarks.splice(gindex, 1); }
+        } else if (anyMark.document) {
+            this.localMarks.delete(anyMark.document);
+        }
+
+        // #FIXME I don't always have to do this but, eh, this is fine for now.
+        if (vscode.window.activeTextEditor) {
+            this.updateDecorations(vscode.window.activeTextEditor);
+        }
+    }
+
+    public clearAllMarks() {
+        this.localMarks.clear();
+        this.globalMarks = [];
+        this.closedGlobalMarks = [];
+
+        // #FIXME I only need to do this if something was deleted.
+        if (vscode.window.activeTextEditor) {
+            this.updateDecorations(vscode.window.activeTextEditor);
+        }
+    }
+
+    public getMarksList(): IAnyMark[] {
+        const list: IAnyMark[] = [];
+
+        for (const [document, marks] of this.localMarks.entries()) {
+            for (const mark of marks) {
+                list.push({
+                    name: mark.name,
+                    filename: document.fileName,
+                    line: mark.line,
+                    column: mark.column,
+                    isGlobal: false,
+                    document: document,
+
+                    label: mark.name,
+                    description: `${document.fileName}:${mark.line}:${mark.column}`,
+                    detail: "Local",
+                });
+            }
+        }
+
+        for (const mark of this.globalMarks) {
+            list.push({
+                name: mark.name,
+                filename: mark.document.fileName,
+                line: mark.line,
+                column: mark.column,
+                isGlobal: true,
+                document: mark.document,
+
+                label: mark.name,
+                description: `${mark.document.fileName}:${mark.line}:${mark.column}`,
+                detail: "Global",
+            });
+        }
+
+        for (const mark of this.closedGlobalMarks) {
+            list.push({
+                name: mark.name,
+                filename: mark.filename,
+                line: mark.line,
+                column: mark.column,
+                isGlobal: true,
+
+                label: mark.name,
+                description: `${mark.filename}:${mark.line}:${mark.column}`,
+                detail: "Global (closed)",
+            });
+        }
+
+        return list.sort((a, b) => {
+            if (a.filename === b.filename) { return 0; }
+            if (a.filename > b.filename) { return 1; }
+            return -1;
+        });
     }
 }
 
-function internalCreateMark(mark: string) {
-    const handler = getMarkHandler();
+export function getMarkHandler(context: vscode.ExtensionContext): MarkHandler {
+    const handler = context.workspaceState.get<MarkHandler>("codemarks.handler");
+    if (!handler) {
+        const newHandler = new MarkHandler();
+        context.workspaceState.update("codemarks.handler", newHandler);
+        context.subscriptions.push(newHandler);
+        return newHandler;
+    } else {
+        return handler;
+    }
+}
+
+function internalCreateMark(mark: string, context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
     if (isLowercaseLetter(mark)) {
         if (vscode.window.activeTextEditor) {
             handler.createEditorMark(mark, vscode.window.activeTextEditor);
@@ -419,8 +531,8 @@ function internalCreateMark(mark: string) {
     }
 }
 
-function internalJumpToMark(mark: string) {
-    const handler = getMarkHandler();
+function internalJumpToMark(mark: string, context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
     if (isLowercaseLetter(mark)) {
         if (vscode.window.activeTextEditor) {
             handler.jumpToLocalMark(mark, vscode.window.activeTextEditor);
@@ -447,7 +559,7 @@ function isUppercaseLetter(ch: string): boolean {
 export function createMark(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
         if (args && typeof args.text === "string" && args.text.length >= 1) {
-            internalCreateMark(args.text[0]);
+            internalCreateMark(args.text[0], context);
         }
 
         disposable.dispose();
@@ -463,7 +575,7 @@ export function createMark(context: vscode.ExtensionContext) {
 export function jumpToMark(context: vscode.ExtensionContext) {
     const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
         if (args && typeof args.text === "string" && args.text.length >= 1) {
-            internalJumpToMark(args.text[0]);
+            internalJumpToMark(args.text[0], context);
         }
 
         disposable.dispose();
@@ -474,4 +586,35 @@ export function jumpToMark(context: vscode.ExtensionContext) {
     });
 
     context.subscriptions.push(disposable);
+}
+
+export async function listMarks(context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    const marks = handler.getMarksList();
+
+    const picked = await vscode.window.showQuickPick(marks, {
+        matchOnDetail: true,
+    });
+
+    if (picked) {
+        handler.jumpToAnyMark(picked);
+    }
+}
+
+export async function listMarksDelete(context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    const marks = handler.getMarksList();
+
+    const picked = await vscode.window.showQuickPick(marks, {
+        matchOnDetail: true,
+    });
+
+    if (picked) {
+        handler.deleteAnyMark(picked);
+    }
+}
+
+export async function clearAllMarks(context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    handler.clearAllMarks();
 }

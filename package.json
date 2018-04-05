@@ -1,8 +1,8 @@
 {
     "name": "code-marks",
     "displayName": "Code Marks",
-    "description": "Quickly mark locations in your code.",
-    "version": "0.0.1",
+    "description": "Quickly mark and jump to locations in your code.",
+    "version": "1.0.0",
     "publisher": "ExPixel",
     "engines": {
         "vscode": "^1.21.0"
@@ -12,7 +12,8 @@
     ],
     "activationEvents": [
         "onCommand:codemarks.createMark",
-        "onCommand:codemarks.jumpToMark"
+        "onCommand:codemarks.jumpToMark",
+        "onCommand:codemarks.listMarks"
     ],
     "main": "./out/extension",
     "contributes": {
@@ -36,13 +37,28 @@
 
         "commands": [
             {
-            "command": "codemarks.createMark",
-            "title": "Create Mark"
+                "command": "codemarks.createMark",
+                "title": "Create Mark"
             },
 
             {
                 "command": "codemarks.jumpToMark",
                 "title": "Jump To Mark"
+            },
+
+            {
+                "command": "codemarks.listMarks",
+                "title": "List Marks"
+            },
+
+            {
+                "command": "codemarks.listMarksDelete",
+                "title": "Delete Mark From List"
+            },
+
+            {
+                "command": "codemarks.clearAllMarks",
+                "title": "Clear all Marks"
             }
         ],
 
