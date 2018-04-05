@@ -2,16 +2,22 @@
 
 code-marks provides features to create and jump to marks throughout your code.
 
-<!-- ## Features
+## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Create, clear, list, and jump to marks throughout your code using either commands or key strokes.
 
-For example if there is an image subfolder under your extension project workspace:
+Provides the Following Commands:  
+- Create Mark
+    - After running the create mark command Code Marks will wait for another key to be pressed. If it is a lowercase letter, code marks will create a local mark for the current file. If it is an uppercase letter, code marks will create a global mark. Local marks can only be accessed in the file they were created in. Creating a mark with the same binding and location as a previous mark will clear that mark instead.
+- Jump To Mark
+    - See Create Mark description for usage. This command just jumps to a mark instead of creating one.
+- List Marks
+- Delete Mark From List
+- Clear all Marks
 
-\!\[feature X\]\(images/feature-x.png\)
+![Example](images/code-marks-example.gif)
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
+<!--
 ## Requirements
 
 If you have any requirements or dependencies, add a section describing those and how to install and configure them.

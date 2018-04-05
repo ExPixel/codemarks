@@ -1,8 +1,8 @@
 {
     "name": "code-marks",
     "displayName": "Code Marks",
-    "description": "Quickly mark locations in your code.",
-    "version": "0.0.1",
+    "description": "Quickly mark and jump to locations in your code.",
+    "version": "1.0.0",
     "publisher": "ExPixel",
     "engines": {
         "vscode": "^1.21.0"
@@ -37,8 +37,8 @@
 
         "commands": [
             {
-            "command": "codemarks.createMark",
-            "title": "Create Mark"
+                "command": "codemarks.createMark",
+                "title": "Create Mark"
             },
 
             {
