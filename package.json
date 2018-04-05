@@ -3,7 +3,7 @@
     "displayName": "Code Marks",
     "description": "Quickly mark and jump to locations in your code.",
     "version": "1.1.0",
-    "publisher": "ExPixel",
+    "publisher": "expixel",
     "icon": "images/map-marker-icon.png",
     "repository": {
         "type": "git",
