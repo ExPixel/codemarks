@@ -506,16 +506,13 @@ export class MarkHandler implements vscode.Disposable {
     }
 }
 
+let markHandler: MarkHandler | null = null;
 export function getMarkHandler(context: vscode.ExtensionContext): MarkHandler {
-    const handler = context.workspaceState.get<MarkHandler>("codemarks.handler");
-    if (!handler) {
-        const newHandler = new MarkHandler();
-        context.workspaceState.update("codemarks.handler", newHandler);
-        context.subscriptions.push(newHandler);
-        return newHandler;
-    } else {
-        return handler;
+    if (markHandler == null) {
+        markHandler = new MarkHandler();
+        context.subscriptions.push(markHandler);
     }
+    return markHandler;
 }
 
 function internalCreateMark(mark: string, context: vscode.ExtensionContext) {
