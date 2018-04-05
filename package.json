@@ -5,6 +5,10 @@
     "version": "1.0.0",
     "publisher": "ExPixel",
     "icon": "images/map-marker-icon.png",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/ExPixel/codemarks.git"
+    },
     "engines": {
         "vscode": "^1.21.0"
     },
