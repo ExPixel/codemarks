@@ -11,9 +11,12 @@ Provides the Following Commands:
     - After running the create mark command Code Marks will wait for another key to be pressed. If it is a lowercase letter, code marks will create a local mark for the current file. If it is an uppercase letter, code marks will create a global mark. Local marks can only be accessed in the file they were created in. Creating a mark with the same binding and location as a previous mark will clear that mark instead.
 - Jump To Mark
     - See Create Mark description for usage. This command just jumps to a mark instead of creating one.
+- Select To Mark
+    - See Create Mark description for usage.
 - List Marks
 - Delete Mark From List
 - Clear all Marks
+- Clear all Local Marks
 
 ![Example](images/code-marks-example.gif)
 
