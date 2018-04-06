@@ -455,6 +455,11 @@ export class MarkHandler implements vscode.Disposable {
         }
     }
 
+    public clearAllLocalMarks(editor: vscode.TextEditor) {
+        this.localMarks.delete(editor.document);
+        this.updateDecorations(editor);
+    }
+
     public clearMarksUnderCursor(editor: vscode.TextEditor) {
         const line = editor.selection.active.line;
         const column = editor.selection.active.character;
@@ -719,6 +724,13 @@ export async function listMarksDelete(context: vscode.ExtensionContext) {
 export async function clearAllMarks(context: vscode.ExtensionContext) {
     const handler = getMarkHandler(context);
     handler.clearAllMarks();
+}
+
+export async function clearAllLocalMarks(context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    if (vscode.window.activeTextEditor) {
+        handler.clearAllLocalMarks(vscode.window.activeTextEditor);
+    }
 }
 
 export async function clearMarksUnderCursor(context: vscode.ExtensionContext) {

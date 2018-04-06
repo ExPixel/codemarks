@@ -62,8 +62,13 @@
             },
 
             {
+                "command": "codemarks.clearAllLocalMarks",
+                "title": "Clear All Local Marks"
+            },
+
+            {
                 "command": "codemarks.clearAllMarks",
-                "title": "Clear all Marks"
+                "title": "Clear All Marks"
             },
 
             {
