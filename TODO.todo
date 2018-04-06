@@ -3,5 +3,3 @@ VSCode does not put the border at the end of a line for some reason
 so marks there are hard to see. Instead of an indicator I could just
 make marks at the end of a line have a full border around them which
 VSCode does show.
-☐ Add functionality for selecting to a mark from the current cursor
-position.
