@@ -490,8 +490,38 @@ export class MarkHandler implements vscode.Disposable {
         this.updateDecorations(editor);
     }
 
-    public selectToMark(mark: string, global: boolean, editor: vscode.TextEditor) {
-        // #TODO not yet implemented.
+    public selectToMark(markName: string, global: boolean, editor: vscode.TextEditor) {
+        let mark: IMark | null = null;
+        const currentDocument = editor.document;
+
+        if (global) {
+            for (const m of this.globalMarks) {
+                if (m.document === currentDocument && m.name === markName) {
+                    mark = m;
+                    break;
+                }
+            }
+        } else {
+            for (const [doc, marks] of this.localMarks) {
+                if (doc !== currentDocument) { continue; }
+                let found = false;
+                for (const m of marks) {
+                    if (m.name === markName) {
+                        mark = m;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) { break; }
+            }
+        }
+
+        if (mark) {
+            const anchor = editor.selection.active;
+            const active = new vscode.Position(mark.line, mark.column);
+            const selection = new vscode.Selection(anchor, active);
+            editor.selection = selection;
+        }
     }
 
     public getMarksList(relativeTo?: vscode.TextDocument): IAnyMark[] {
