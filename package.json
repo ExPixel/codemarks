@@ -64,6 +64,16 @@
             {
                 "command": "codemarks.clearAllMarks",
                 "title": "Clear all Marks"
+            },
+
+            {
+                "command": "codemarks.clearMarksUnderCursor",
+                "title": "Clear Marks Under Cursor"
+            },
+
+            {
+                "command": "codemarks.selectToMark",
+                "title": "Select to Mark"
             }
         ],
 
@@ -79,6 +89,20 @@
                 "command": "codemarks.jumpToMark",
                 "key": "ctrl+'",
                 "mac": "cmd+'",
+                "when": "editorFocus"
+            },
+
+            {
+                "command": "codemarks.clearMarksUnderCursor",
+                "key": "ctrl+shift+;",
+                "mac": "cmd+shift+;",
+                "when": "editorFocus"
+            },
+
+            {
+                "command": "codemarks.selectToMark",
+                "key": "ctrl+shift+'",
+                "mac": "cmd+shift+'",
                 "when": "editorFocus"
             }
         ]

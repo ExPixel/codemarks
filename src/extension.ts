@@ -2,7 +2,7 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { createMark, jumpToMark, listMarks, listMarksDelete, clearAllMarks } from "./marks";
+import { createMark, jumpToMark, listMarks, listMarksDelete, clearAllMarks, clearMarksUnderCursor, selectToMark } from "./marks";
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -28,9 +28,19 @@ export function activate(context: vscode.ExtensionContext) {
         clearAllMarks(context);
     });
 
+    const clearMarksUnderCursorDisposable = vscode.commands.registerCommand("codemarks.clearMarksUnderCursor", () => {
+        clearMarksUnderCursor(context);
+    });
+
+    const selectToMarkDisposable = vscode.commands.registerCommand("codemarks.selectToMark", () => {
+        selectToMark(context);
+    });
+
     context.subscriptions.push(createMarkDisposable);
     context.subscriptions.push(jumpToMarkDisposable);
     context.subscriptions.push(listMarksDisposable);
     context.subscriptions.push(listMarksDeleteDisposable);
     context.subscriptions.push(clearAllMarksDisposable);
+    context.subscriptions.push(clearMarksUnderCursorDisposable);
+    context.subscriptions.push(selectToMarkDisposable);
 }
