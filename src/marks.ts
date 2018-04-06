@@ -415,6 +415,7 @@ export class MarkHandler implements vscode.Disposable {
             const markPosition = new vscode.Position(mark.line, mark.column);
             const selection = new vscode.Selection(markPosition, markPosition);
             vscode.window.activeTextEditor.selection = selection;
+            vscode.window.activeTextEditor.revealRange(selection, vscode.TextEditorRevealType.InCenter);
         }
     }
 
