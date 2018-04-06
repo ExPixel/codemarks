@@ -415,6 +415,7 @@ export class MarkHandler implements vscode.Disposable {
             const markPosition = new vscode.Position(mark.line, mark.column);
             const selection = new vscode.Selection(markPosition, markPosition);
             vscode.window.activeTextEditor.selection = selection;
+            vscode.window.activeTextEditor.revealRange(selection, vscode.TextEditorRevealType.InCenter);
         }
     }
 
@@ -451,6 +452,80 @@ export class MarkHandler implements vscode.Disposable {
         // #FIXME I only need to do this if something was deleted.
         if (vscode.window.activeTextEditor) {
             this.updateDecorations(vscode.window.activeTextEditor);
+        }
+    }
+
+    public clearAllLocalMarks(editor: vscode.TextEditor) {
+        this.localMarks.delete(editor.document);
+        this.updateDecorations(editor);
+    }
+
+    public clearMarksUnderCursor(editor: vscode.TextEditor) {
+        const line = editor.selection.active.line;
+        const column = editor.selection.active.character;
+        const currentDocument = editor.document;
+
+        const localMarks = this.localMarks.get(currentDocument);
+        if (localMarks) {
+            let idx = 0;
+            while (idx < localMarks.length) {
+                const mark = localMarks[idx];
+                if (mark.line === line && mark.column === column) {
+                    localMarks.splice(idx, 1);
+                    continue;
+                }
+                idx++;
+            }
+
+            if (localMarks.length < 1) {
+                this.localMarks.delete(currentDocument);
+            }
+        }
+
+        let gidx = 0;
+        while (gidx < this.globalMarks.length) {
+            const mark = this.globalMarks[gidx];
+            if (mark.line === line && mark.column === column) {
+                this.globalMarks.splice(gidx, 1);
+                continue;
+            }
+            gidx++;
+        }
+
+        this.updateDecorations(editor);
+    }
+
+    public selectToMark(markName: string, global: boolean, editor: vscode.TextEditor) {
+        let mark: IMark | null = null;
+        const currentDocument = editor.document;
+
+        if (global) {
+            for (const m of this.globalMarks) {
+                if (m.document === currentDocument && m.name === markName) {
+                    mark = m;
+                    break;
+                }
+            }
+        } else {
+            for (const [doc, marks] of this.localMarks) {
+                if (doc !== currentDocument) { continue; }
+                let found = false;
+                for (const m of marks) {
+                    if (m.name === markName) {
+                        mark = m;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) { break; }
+            }
+        }
+
+        if (mark) {
+            const anchor = editor.selection.active;
+            const active = new vscode.Position(mark.line, mark.column);
+            const selection = new vscode.Selection(anchor, active);
+            editor.selection = selection;
         }
     }
 
@@ -558,6 +633,24 @@ function internalJumpToMark(mark: string, context: vscode.ExtensionContext) {
     }
 }
 
+function internalClearMarksUnderCursor(context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    if (vscode.window.activeTextEditor) {
+        handler.clearMarksUnderCursor(vscode.window.activeTextEditor);
+    }
+}
+
+function internalSelecToMark(mark: string, context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    if (vscode.window.activeTextEditor) {
+        if (isLowercaseLetter(mark)) {
+            handler.selectToMark(mark, false, vscode.window.activeTextEditor);
+        } else if (isUppercaseLetter(mark)) {
+            handler.selectToMark(mark, true, vscode.window.activeTextEditor);
+        }
+    }
+}
+
 const CHARCODE_UPPER_A: number = "A".charCodeAt(0);
 const CHARCODE_UPPER_Z: number = "Z".charCodeAt(0);
 const CHARCODE_LOWER_A: number = "a".charCodeAt(0);
@@ -572,36 +665,34 @@ function isUppercaseLetter(ch: string): boolean {
     return code >= CHARCODE_UPPER_A && code <= CHARCODE_UPPER_Z;
 }
 
-export function createMark(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
-        if (args && typeof args.text === "string" && args.text.length >= 1) {
-            internalCreateMark(args.text[0], context);
-        }
+function readTypedCharacter(context: vscode.ExtensionContext): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
+            if (args && typeof args.text === "string" && args.text.length >= 1) {
+                resolve(args.text[0]);
+            }
 
-        disposable.dispose();
-        const index = context.subscriptions.indexOf(disposable);
-        if (index >= 0) {
-            context.subscriptions.splice(index, 1);
-        }
+            disposable.dispose();
+            const index = context.subscriptions.indexOf(disposable);
+            if (index >= 0) {
+                context.subscriptions.splice(index, 1);
+            }
+        });
+
+        context.subscriptions.push(disposable);
     });
+}
 
-    context.subscriptions.push(disposable);
+export function createMark(context: vscode.ExtensionContext) {
+    readTypedCharacter(context).then((ch) => {
+        internalCreateMark(ch, context);
+    });
 }
 
 export function jumpToMark(context: vscode.ExtensionContext) {
-    const disposable = vscode.commands.registerCommand("type", (args: ITypeArguments) => {
-        if (args && typeof args.text === "string" && args.text.length >= 1) {
-            internalJumpToMark(args.text[0], context);
-        }
-
-        disposable.dispose();
-        const index = context.subscriptions.indexOf(disposable);
-        if (index >= 0) {
-            context.subscriptions.splice(index, 1);
-        }
+    readTypedCharacter(context).then((ch) => {
+        internalJumpToMark(ch, context);
     });
-
-    context.subscriptions.push(disposable);
 }
 
 export async function listMarks(context: vscode.ExtensionContext) {
@@ -633,4 +724,21 @@ export async function listMarksDelete(context: vscode.ExtensionContext) {
 export async function clearAllMarks(context: vscode.ExtensionContext) {
     const handler = getMarkHandler(context);
     handler.clearAllMarks();
+}
+
+export async function clearAllLocalMarks(context: vscode.ExtensionContext) {
+    const handler = getMarkHandler(context);
+    if (vscode.window.activeTextEditor) {
+        handler.clearAllLocalMarks(vscode.window.activeTextEditor);
+    }
+}
+
+export async function clearMarksUnderCursor(context: vscode.ExtensionContext) {
+    internalClearMarksUnderCursor(context);
+}
+
+export async function selectToMark(context: vscode.ExtensionContext) {
+    readTypedCharacter(context).then((ch) => {
+        internalSelecToMark(ch, context);
+    });
 }

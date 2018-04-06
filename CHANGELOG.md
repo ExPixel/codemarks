@@ -10,3 +10,8 @@
 - Only shows local marks for currently open file in mark listings now.
 - Now correctly filters filenames in mark listings.
 - Global marks for closed files are now overwritten properly.
+
+## 1.2.0
+- Editor now scrolls to mark after jump.
+- Adds command to select to a mark.
+- Adds command to clear all marks under the cursor.

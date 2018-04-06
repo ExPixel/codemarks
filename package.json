@@ -2,7 +2,7 @@
     "name": "code-marks",
     "displayName": "Code Marks",
     "description": "Quickly mark and jump to locations in your code.",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "publisher": "expixel",
     "icon": "images/map-marker-icon.png",
     "repository": {
@@ -62,8 +62,23 @@
             },
 
             {
+                "command": "codemarks.clearAllLocalMarks",
+                "title": "Clear All Local Marks"
+            },
+
+            {
                 "command": "codemarks.clearAllMarks",
-                "title": "Clear all Marks"
+                "title": "Clear All Marks"
+            },
+
+            {
+                "command": "codemarks.clearMarksUnderCursor",
+                "title": "Clear Marks Under Cursor"
+            },
+
+            {
+                "command": "codemarks.selectToMark",
+                "title": "Select to Mark"
             }
         ],
 
@@ -79,6 +94,20 @@
                 "command": "codemarks.jumpToMark",
                 "key": "ctrl+'",
                 "mac": "cmd+'",
+                "when": "editorFocus"
+            },
+
+            {
+                "command": "codemarks.clearMarksUnderCursor",
+                "key": "ctrl+shift+;",
+                "mac": "cmd+shift+;",
+                "when": "editorFocus"
+            },
+
+            {
+                "command": "codemarks.selectToMark",
+                "key": "ctrl+shift+'",
+                "mac": "cmd+shift+'",
                 "when": "editorFocus"
             }
         ]
